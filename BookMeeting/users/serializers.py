@@ -1,5 +1,6 @@
+from matplotlib.pyplot import cla
 from rest_framework import serializers
-from .models import CustomUser
+from .models import CustomUser, Group_user
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -73,3 +74,10 @@ class UserListAll(serializers.Serializer):
     group = serializers.CharField()
     created_at = serializers.DateTimeField()
     
+class Membergroup(serializers.ModelSerializer):
+    class Meta:
+        model = Group_user
+        fields = '__all__'
+
+    def create(self, validated_data):
+        return Group_user.objects.create(**validated_data)
