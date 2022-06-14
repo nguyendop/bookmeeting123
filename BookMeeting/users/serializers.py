@@ -1,4 +1,3 @@
-from matplotlib.pyplot import cla
 from rest_framework import serializers
 from .models import CustomUser, Group_user
 
@@ -66,6 +65,7 @@ class listevent(serializers.Serializer):
     def create(self, validated_data):
         return CustomUser.objects.create_user(**validated_data)
 
+
 class UserListAll(serializers.Serializer):
     email = serializers.EmailField()
     fullname = serializers.CharField()
@@ -73,7 +73,8 @@ class UserListAll(serializers.Serializer):
     is_superuser = serializers.BooleanField()
     group = serializers.CharField()
     created_at = serializers.DateTimeField()
-    
+
+
 class Membergroup(serializers.ModelSerializer):
     class Meta:
         model = Group_user
