@@ -1,0 +1,23 @@
+version: '3.8'
+services:
+  web:
+    build: .
+    volumes:
+      - .:/django
+    ports:
+      - 8000:8000
+    image: app:django
+    container_name: django_container
+    command: python3 manage.py runserver 0.0.0.0:8000
+  db:
+    image: mysql:5.7
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_DATABASE='bookmeeting'
+      - MYSQL_USER='bookmeeting'
+      - MYSQL_PASSWORD='Admin1234'
+      - MYSQL_ROOT_PASSWORD='Admin1234'
+      - MYSQL_HOST='bookmeeting.cs8watsrgu5l.us-west-1.rds.amazonaws.com'
+    volumes:
+      - ./data/mysql/dbb:/var/lib/mysql
