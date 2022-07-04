@@ -17,7 +17,6 @@ services:
       - MYSQL_DATABASE='bookmeeting'
       - MYSQL_USER='bookmeeting'
       - MYSQL_PASSWORD='Admin1234'
-      - MYSQL_ROOT_PASSWORD='Admin1234'
       - MYSQL_HOST='bookmeeting.cs8watsrgu5l.us-west-1.rds.amazonaws.com'
     volumes:
       - ./data/mysql/dbb:/var/lib/mysql
