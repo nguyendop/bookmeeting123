@@ -1,7 +1,16 @@
-version: '3'
+version: '3.8'
 services:
+  web:
+    build: .
+    volumes:
+      - .:/django
+    ports:
+      - 8000:8000
+    image: app:django
+    container_name: django_container
+    command: python3 manage.py runserver 0.0.0.0:8000
   db:
-    image: mysql:8
+    image: mysql:5.7
     ports:
       - "3306:3306"
     environment:
@@ -11,15 +20,4 @@ services:
       - MYSQL_ROOT_PASSWORD='Admin1234'
       - MYSQL_HOST='bookmeeting.cs8watsrgu5l.us-west-1.rds.amazonaws.com'
     volumes:
-      - /tmp/app/mysql:/var/run/mysql
-      - ./db:/var/lib/mysql
-  web:
-    build: .
-    command: python manage.py runserver 0.0.0.0:8000
-    ports:
-      - "8000:8000"
-    volumes:
-      - .:/app
-      - /tmp/app/mysql:/run/mysql
-    depends_on:
-      - db
+      - ./data/mysql/dbb:/var/lib/mysql
