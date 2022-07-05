@@ -45,3 +45,7 @@ python manage.py runserver
    password: gõ thôi không cần nhìn
 5. Khởi động server: python manage.py runserver
 
+create Dockerfile and docker-compose.yml
+docker-compose build
+docker-compose up
+
