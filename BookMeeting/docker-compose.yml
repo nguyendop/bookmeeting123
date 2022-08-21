@@ -15,8 +15,8 @@ services:
       - "3306:3306"
     environment:
       - MYSQL_DATABASE='bookmeeting'
-      - MYSQL_USER='bookmeeting'
-      - MYSQL_PASSWORD='Admin1234'
-      - MYSQL_HOST='bookmeeting.cs8watsrgu5l.us-west-1.rds.amazonaws.com'
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=admin
+      - MYSQL_HOST=127.0.0.1
     volumes:
       - ./data/mysql/dbb:/var/lib/mysql
