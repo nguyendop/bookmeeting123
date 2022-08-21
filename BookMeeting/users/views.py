@@ -1,3 +1,4 @@
+import os
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.core.mail import send_mail
@@ -8,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.template.loader import render_to_string
+
 from .models import CustomUser, status_user
 from .permissions import IsOwnerOrReadOnly
 from .serializers import CustomUserSerializer, UserListAll, UserLoginSerializer, ChangePasswordSerializer, RegisterSerializer, \

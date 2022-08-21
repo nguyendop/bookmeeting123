@@ -33,13 +33,6 @@ class GroupView(APIView):
             "data": serializers.data,
         }, status=status.HTTP_200_OK)
 
-    def post(self, request, format=None):
-        serializer = GroupSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'data': serializer.data, 'code': status.HTTP_201_CREATED})
-        return Response(status.HTTP_400_BAD_REQUEST)
-
 
 class GroupDetailView(APIView):
     permission_classes = [IsAdminUser]
@@ -84,9 +77,14 @@ class EditGroup(APIView):
 
         group_all = Group.objects.all()
         serializer_all = GroupSerializer(group_all, many=True)
-        group = Group.objects.get(pk=pk)
+        try:
+            group = Group.objects.get(pk=pk)
+        except Group.DoesNotExist:
+            return Response({
+                "success": False,
+                "message": "Group does not exist!"
+            }, status=status.HTTP_400_BAD_REQUEST)
         serializer = GroupSerializer(group)
-
         listroom = []
         for i in serializer_all.data:
             if i['status_group'] == '0' or i['status_group'] == '1':
@@ -113,6 +111,7 @@ class EditGroup(APIView):
         except:
             return Response({
                 "success": False,
+                "message": "Field name is required"
             }, status=status.HTTP_400_BAD_REQUEST)
         try:
             group_all.filter(status_group=-1).filter(name=request.data['name']).delete()
@@ -144,7 +143,7 @@ class AddGroup(APIView):
                 "success": False,
                 "error": {
                     "code": status.HTTP_400_BAD_REQUEST,
-                    "message": "Input is invalid!",
+                    "message": serializer.errors,
                 }
             }, status=status.HTTP_400_BAD_REQUEST)
         elif serializer.is_valid():
@@ -292,7 +291,7 @@ class AddRoom(APIView):
                 "success": False,
                 "error": {
                     "code": status.HTTP_400_BAD_REQUEST,
-                    "message": "Input is invalid!",
+                    "message": serializer.errors,
                 }
             }, status=status.HTTP_400_BAD_REQUEST)
         elif serializer.is_valid():
@@ -456,10 +455,21 @@ class EditRoom(APIView):
 
         room_all = Room.objects.all()
         serializer_all = RoomSerializer(room_all, many=True)
-        room = Room.objects.get(pk=pk)
+        try:
+            room = Room.objects.get(pk=pk)
+        except Room.DoesNotExist:
+             return Response({
+                "success": False,
+                "message": "Room does not exist!"
+            }, status=status.HTTP_400_BAD_REQUEST)
         serializer = RoomSerializer(room)
-
-        data_3 = Room.objects.filter(~Q(pk =pk)).filter(status_room__in='0').filter(color=request.data['color'])
+        try:
+            data_3 = Room.objects.filter(~Q(pk =pk)).filter(status_room__in='0').filter(color=request.data['color'])
+        except:
+             return Response({
+                "success": False,
+                "message": "Field color is required"
+            }, status=status.HTTP_400_BAD_REQUEST)
         serializer_3 = AddRoomSerializer(data_3, many=True)
         if serializer_3.data:
             return Response({
@@ -494,6 +504,7 @@ class EditRoom(APIView):
         except:
             return Response({
                 "success": False,
+                "message":"Field name is required"
             }, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -504,6 +515,9 @@ class EditRoom(APIView):
                 serializer.save()
                 room_all.filter(id=pk).update(name=request.data['name'].upper())
                 return Response(serializer.data)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                "success": False, 
+                "message":serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
         except Room.DoesNotExist:
             return Response({'code': status.HTTP_404_NOT_FOUND})
