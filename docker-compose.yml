@@ -1,0 +1,38 @@
+version: "3.6"
+
+services:
+  db:
+    image: mysql:5.7
+    cap_add:
+      - SYS_NICE
+    restart: always
+    environment:
+      - MYSQL_DATABASE=bookmeeting
+      - MYSQL_ROOT_PASSWORD=Lehuynam@123
+    ports:
+      - '3306:3306'
+    volumes:
+      - db:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    network_mode: host
+
+  backend:
+    build:
+      context: .
+      dockerfile: BookMeeting/Dockerfile
+    env_file: BookMeeting/.env
+    restart: always
+    volumes:
+      - .:/app/
+    depends_on:
+      - db
+    expose:
+      - 8000
+    ports:
+      - "8000:8000"
+    network_mode: host
+    command: bash -c "cd BookMeeting && python3 manage.py makemigrations && python3 manage.py migrate && python3 manage.py runserver 0.0.0.0:8000"
+
+volumes:
+  db:
+    driver: local
