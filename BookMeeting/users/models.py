@@ -33,7 +33,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     status_user = models.CharField(max_length=20, choices=status_user, default="0")
     is_vip = models.CharField(max_length=20, choices=vip_or_not, default="0")
     role = models.CharField(max_length=20, choices=role_user, default="1")
-    group = models.CharField(max_length=254, unique=True, blank=False)
+    group = models.ForeignKey("room_and_group.Group", on_delete=models.CASCADE, related_name="group_by", null=True,
+                              blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey("CustomUser", on_delete=models.CASCADE, related_name="created_by_admin", null=True,
@@ -51,6 +52,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f'{self.email}'
+
+
 class Group_user(models.Model):
     id = models.CharField(max_length=50, primary_key=True, editable=False)
     user_id = models.ForeignKey("CustomUser", on_delete=models.CASCADE, related_name="user_id", null=True, blank=True)
