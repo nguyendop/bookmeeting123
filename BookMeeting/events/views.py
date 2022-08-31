@@ -135,6 +135,8 @@ class DeleteEvent(generics.ListAPIView):
     delete that
     """
     permission_classes = [IsAuthenticated]
+    serializer_class = EventSerializer
+    queryset = Event.objects.all()
 
     def list(self, request, pk):
         event = Event.objects.get(pk=pk)

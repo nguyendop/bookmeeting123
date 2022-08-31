@@ -2,7 +2,8 @@ import os
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.core.mail import send_mail
-from rest_framework import status, generics, filters
+from rest_framework import status, filters
+from rest_framework.viewsets import generics
 from rest_framework.decorators import APIView
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
@@ -12,7 +13,8 @@ from django.template.loader import render_to_string
 
 from .models import CustomUser, status_user
 from .permissions import IsOwnerOrReadOnly
-from .serializers import CustomUserSerializer, UserListAll, UserLoginSerializer, ChangePasswordSerializer, RegisterSerializer, \
+from .serializers import CustomUserSerializer, UserListAll, UserLoginSerializer, ChangePasswordSerializer, \
+    RegisterSerializer, \
     UserViewSerializer
 
 
@@ -24,11 +26,12 @@ class UserList(generics.ListAPIView):
     search_fields = ['fullname']
 
 
-class UserRegisterView(APIView):
+class UserRegisterView(generics.GenericAPIView):
     """
     This is Register view
     """
     permission_classes = [IsAdminUser]
+    serializer_class = RegisterSerializer
 
     def post(self, request, format=None):
         jwt_object = JWTAuthentication()
@@ -43,7 +46,7 @@ class UserRegisterView(APIView):
                 "success": False,
                 "error": {
                     "code": status.HTTP_400_BAD_REQUEST,
-                    "message": "Email is invalid!",
+                    "message": serializer.errors,
                 }
             }, status=status.HTTP_400_BAD_REQUEST)
         elif serializer.is_valid():
@@ -98,10 +101,11 @@ class UserRegisterView(APIView):
                 }, status=status.HTTP_201_CREATED)
 
 
-class UserLoginView(APIView):
+class UserLoginView(generics.GenericAPIView):
     """
     This is login view
     """
+    serializer_class = UserLoginSerializer
 
     def post(self, request, format=None):
         serializer = UserLoginSerializer(data=request.data)
@@ -172,10 +176,11 @@ class UserLoginView(APIView):
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
-class UserLoginNewView(APIView):
+class UserLoginNewView(generics.GenericAPIView):
     """
     This is login view
     """
+    serializer_class = UserLoginSerializer
 
     def post(self, request, format=None):
         serializer = UserLoginSerializer(data=request.data)
@@ -218,7 +223,7 @@ class UserLoginNewView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ChangePasswordView(APIView):
+class ChangePasswordView(generics.GenericAPIView):
     """
     An endpoint for changing password.
     """
@@ -285,11 +290,12 @@ class ChangePasswordView(APIView):
         })
 
 
-class UserDetail(APIView):
+class UserDetail(generics.GenericAPIView):
     """
     Retrieve, update or delete a user instance.
     """
     permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+    serializer_class = CustomUserSerializer
 
     def get(self, request, pk, format=None):
 
@@ -321,8 +327,10 @@ class UserDetail(APIView):
             return Response({'code': status.HTTP_404_NOT_FOUND})
 
 
-class UserNameView(APIView):
+class UserNameView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = UserViewSerializer
+    queryset = CustomUser.objects.all()
 
     def get(self, request, format=None):
 
@@ -346,8 +354,12 @@ class UserNameView(APIView):
             "data": UserViewSerializer(user_data).data,
         }, status=status.HTTP_200_OK)
 
-class ListUser(APIView):
+
+class ListUser(generics.GenericAPIView):
     permissions_classes = [IsAuthenticated]
+    serializer_class = UserListAll
+    queryset = CustomUser.objects.all()
+
     def get(self, request, format=None):
         User = CustomUser.objects.all()
         serializer = UserListAll(User, many=True)

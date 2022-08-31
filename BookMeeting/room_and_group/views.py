@@ -3,6 +3,7 @@ from tkinter import N
 from tkinter.messagebox import NO
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.viewsets import generics
 from rest_framework.decorators import APIView
 from rest_framework import status
 from .serializers import GroupSerializer, RoomSerializer, DeleteRoomSerializer
@@ -11,6 +12,7 @@ from rest_framework.permissions import IsAdminUser
 import sys
 from django.utils import timezone
 from django.db.models import Q
+
 sys.path.append("..")
 from events.models import Event
 from events.serializers import EventSerializer
@@ -20,10 +22,10 @@ from .serializers import AddRoomSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
-
-
-class GroupView(APIView):
+class GroupView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = GroupSerializer
+    queryset = Group.objects.all()
 
     def get(self, request, format=None):
         groups = Group.objects.all().filter(status_group__in=['0', '1']).order_by('-created_at')
@@ -34,8 +36,10 @@ class GroupView(APIView):
         }, status=status.HTTP_200_OK)
 
 
-class GroupDetailView(APIView):
+class GroupDetailView(generics.GenericAPIView):
     permission_classes = [IsAdminUser]
+    serializer_class = GroupSerializer
+    queryset = Group.objects.all()
 
     def get(self, request, pk, format=None):
         try:
@@ -65,8 +69,10 @@ class GroupDetailView(APIView):
             return Response({'code': status.HTTP_404_NOT_FOUND})
 
 
-class EditGroup(APIView):
+class EditGroup(generics.GenericAPIView):
     permission_classes = [IsAdminUser]
+    serializer_class = GroupSerializer
+    queryset = Group.objects.all()
 
     def put(self, request, pk, format=None):
         jwt_object = JWTAuthentication()
@@ -118,7 +124,8 @@ class EditGroup(APIView):
             serializer_save = GroupSerializer(group, data=request.data)
             if serializer_save.is_valid():
                 serializer_save.save()
-                Group.objects.filter(id=serializer.data['id']).update(updated_by=user, name=request.data['name'].upper())
+                Group.objects.filter(id=serializer.data['id']).update(updated_by=user,
+                                                                      name=request.data['name'].upper())
                 return Response({
                     "success": True,
                     "message": "Edit Successful!"
@@ -127,8 +134,9 @@ class EditGroup(APIView):
             return Response({'code': status.HTTP_404_NOT_FOUND})
 
 
-class AddGroup(APIView):
+class AddGroup(generics.GenericAPIView):
     permission_classes = [IsAdminUser]
+    serializer_class = GroupSerializer
 
     def post(self, request, format=None):
         jwt_object = JWTAuthentication()
@@ -174,7 +182,8 @@ class AddGroup(APIView):
                 if serializer_2.data['status_group'] == '-1':
                     data_check = Group.objects.all().filter(name=request.data['name']).update(status_group=0,
                                                                                               created_by=user,
-                                                                                              name=request.data['name'].upper(),
+                                                                                              name=request.data[
+                                                                                                  'name'].upper(),
                                                                                               created_at=timezone.now())
                     serializer_save = GroupSerializer(data_2, data=data_check)
                     if serializer_save.is_valid():
@@ -186,15 +195,18 @@ class AddGroup(APIView):
                 serializer = GroupSerializer(data=request.data)
                 if serializer.is_valid():
                     serializer.save()
-                Group.objects.all().filter(name=request.data['name']).update(created_by=user, name=request.data['name'].upper())
+                Group.objects.all().filter(name=request.data['name']).update(created_by=user,
+                                                                             name=request.data['name'].upper())
 
                 return Response({
                     "success": True,
                 }, status=status.HTTP_201_CREATED)
 
 
-class RoomView(APIView):
+class RoomView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = RoomSerializer
+    queryset = Room.objects.all()
 
     def get(self, request, format=None):
         rooms = Room.objects.all().filter(status_room__in=['0', '1']).order_by('-updated_at')
@@ -205,9 +217,11 @@ class RoomView(APIView):
         })
 
 
-
-class RoomDetailView(APIView):
+class RoomDetailView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = RoomSerializer
+    queryset = Room.objects.all()
+
     def get(self, request, pk, format=None):
         try:
             room = Room.objects.get(pk=pk)
@@ -236,8 +250,9 @@ class RoomDetailView(APIView):
             return Response({'code': status.HTTP_404_NOT_FOUND})
 
 
-class SearchEventRoom(APIView):
+class SearchEventRoom(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = BookingsearchroomSerializer
 
     def post(self, request, format=None):
         room_name = request.data['room_name']
@@ -274,8 +289,9 @@ class SearchEventRoom(APIView):
             }, status=status.HTTP_404_NOT_FOUND)
 
 
-class AddRoom(APIView):
+class AddRoom(generics.GenericAPIView):
     permission_classes = [IsAdminUser]
+    serializer_class = AddRoomSerializer
 
     def post(self, request, format=None):
         jwt_object = JWTAuthentication()
@@ -360,9 +376,9 @@ class AddRoom(APIView):
                 }, status=status.HTTP_201_CREATED)
 
 
-
-class DeleteRoom(APIView):
+class DeleteRoom(generics.GenericAPIView):
     permission_classes = [IsAdminUser]
+    serializer_class = DeleteRoomSerializer
 
     def post(self, request, format=None):
         serializer = DeleteRoomSerializer(data=request.data)
@@ -392,7 +408,7 @@ class DeleteRoom(APIView):
                 "error": {
                     "code": status.HTTP_400_BAD_REQUEST,
                     "message": "There's an event going on in the room",
-                    }
+                }
             }, status=status.HTTP_400_BAD_REQUEST)
         if serializer.data['status_room'] == '0':
             Room.objects.filter(name=serializer.data['name']).update(status_room='-1')
@@ -408,8 +424,9 @@ class DeleteRoom(APIView):
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
-class DeleteGroup(APIView):
+class DeleteGroup(generics.GenericAPIView):
     permission_classes = [IsAdminUser]
+    serializer_class = GroupSerializer
 
     def post(self, request, format=None):
         serializer = GroupSerializer(data=request.data)
@@ -442,8 +459,10 @@ class DeleteGroup(APIView):
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
-class EditRoom(APIView):
+class EditRoom(generics.GenericAPIView):
     permission_classes = [IsAdminUser]
+    serializer_class = AddRoomSerializer
+    queryset = Room.objects.all()
 
     def put(self, request, pk, format=None):
 
@@ -458,15 +477,15 @@ class EditRoom(APIView):
         try:
             room = Room.objects.get(pk=pk)
         except Room.DoesNotExist:
-             return Response({
+            return Response({
                 "success": False,
                 "message": "Room does not exist!"
             }, status=status.HTTP_400_BAD_REQUEST)
         serializer = RoomSerializer(room)
         try:
-            data_3 = Room.objects.filter(~Q(pk =pk)).filter(status_room__in='0').filter(color=request.data['color'])
+            data_3 = Room.objects.filter(~Q(pk=pk)).filter(status_room__in='0').filter(color=request.data['color'])
         except:
-             return Response({
+            return Response({
                 "success": False,
                 "message": "Field color is required"
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -504,7 +523,7 @@ class EditRoom(APIView):
         except:
             return Response({
                 "success": False,
-                "message":"Field name is required"
+                "message": "Field name is required"
             }, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -516,8 +535,8 @@ class EditRoom(APIView):
                 room_all.filter(id=pk).update(name=request.data['name'].upper())
                 return Response(serializer.data)
             return Response({
-                "success": False, 
-                "message":serializer.errors
-                }, status=status.HTTP_400_BAD_REQUEST)
+                "success": False,
+                "message": serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
         except Room.DoesNotExist:
             return Response({'code': status.HTTP_404_NOT_FOUND})

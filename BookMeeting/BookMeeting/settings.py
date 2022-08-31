@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'users',
     'events',
     'booking',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
