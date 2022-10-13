@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from events.serializers import EventSerializer
 from room_and_group.models import Group, Room
+from users.models import Group_user
 
 
 class GroupSerializer(serializers.ModelSerializer):
@@ -60,3 +61,13 @@ class Room_Search_event_Serializer(serializers.Serializer):
 
     def create(self, validated_data):
         return Room.objects.create(**validated_data)
+
+
+class GroupManagerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Group_user
+        fields = "__all__"
+
+    def create(self, validated_data):
+        return Group_user.objects.create(**validated_data)
+

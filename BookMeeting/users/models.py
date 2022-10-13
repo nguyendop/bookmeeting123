@@ -55,8 +55,16 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
 
 class Group_user(models.Model):
-    id = models.CharField(max_length=50, primary_key=True, editable=False)
+    id = models.AutoField(primary_key=True, editable=False)
     user_id = models.ForeignKey("CustomUser", on_delete=models.CASCADE, related_name="user_id", null=True, blank=True)
     group_id = models.ForeignKey("room_and_group.Group", on_delete=models.SET_NULL, blank=True, null=True)
-    email = models.ForeignKey("CustomUser", on_delete=models.CASCADE, related_name="email_user", blank=True, null=True)
+    email = models.EmailField(blank=True, null=True, unique=False)
     isADGroup = models.BooleanField(default=False)
+
+    def inherit(self):
+        self.isADGroup = True
+        self.save()
+
+    def demote(self):
+        self.isADGroup = False
+        self.save()

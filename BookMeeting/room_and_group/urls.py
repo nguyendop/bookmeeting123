@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from .views import *
 
 urlpatterns = [
@@ -15,4 +15,8 @@ urlpatterns = [
     path('room/delete_room/', DeleteRoom.as_view(), name="delete-room"),
     path('room/edit_room/<uuid:pk>', EditRoom.as_view(), name="edit-room"),
 
+    path('manage_group/<uuid:group_id>', GroupManagerViewset.as_view(), name="manager group"),
+    path('manage_group/<uuid:group_id>/leave', GroupManageActionView.as_view(), name="action group"),
+    path('manage_group/<uuid:group_id>/permission', GroupManagerPermission.as_view(), name="permission group"),
+    path('manage_group/<uuid:group_id>/demote', GroupManagerDemote.as_view(), name="demote group"),
 ]

@@ -3,8 +3,8 @@ from tkinter import N
 from tkinter.messagebox import NO
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.viewsets import generics
-from rest_framework.decorators import APIView
+from rest_framework.viewsets import generics, mixins
+from rest_framework.decorators import APIView, action
 from rest_framework import status
 from .serializers import GroupSerializer, RoomSerializer, DeleteRoomSerializer
 from .models import Group, Room
@@ -18,8 +18,9 @@ from events.models import Event
 from events.serializers import EventSerializer
 from booking.models import Booking
 from booking.serializers import BookingSerializer, BookingemptySerializer, BookingsearchroomSerializer
-from .serializers import AddRoomSerializer
+from .serializers import AddRoomSerializer, GroupManagerSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from users.models import Group_user, CustomUser
 
 
 class GroupView(generics.GenericAPIView):
@@ -195,9 +196,15 @@ class AddGroup(generics.GenericAPIView):
                 serializer = GroupSerializer(data=request.data)
                 if serializer.is_valid():
                     serializer.save()
+                    data_group_manager = {
+                        "user_id": request.user,
+                        "group_id": Group.objects.get(name=request.data['name']),
+                        "email": request.user.email,
+                        "isADGroup": True
+                    }
+                    GroupManagerSerializer().create(validated_data=data_group_manager)
                 Group.objects.all().filter(name=request.data['name']).update(created_by=user,
                                                                              name=request.data['name'].upper())
-
                 return Response({
                     "success": True,
                 }, status=status.HTTP_201_CREATED)
@@ -540,3 +547,234 @@ class EditRoom(generics.GenericAPIView):
             }, status=status.HTTP_400_BAD_REQUEST)
         except Room.DoesNotExist:
             return Response({'code': status.HTTP_404_NOT_FOUND})
+
+
+class GroupManagerViewset(generics.GenericAPIView, mixins.ListModelMixin):
+    permission_classes = [IsAuthenticated]
+    serializer_class = GroupManagerSerializer
+    queryset = Group_user.objects.all()
+
+    def get_queryset(self):
+        group_id = self.kwargs.get("group_id")
+        return self.queryset.filter(group_id=group_id)
+
+    def get(self, request, *args, **kwargs):
+        try:
+            is_ad = Group_user.objects.get(Q(email=request.user) & Q(group_id=self.kwargs.get("group_id")))
+        except:
+            return Response({
+                "success": False,
+                "message": "You do not exist in this group!"
+            }, status.HTTP_400_BAD_REQUEST)
+        if not is_ad.isADGroup:
+            return Response({
+                "success": False,
+                "message": "Permission denied!"
+            }, status.HTTP_403_FORBIDDEN)
+        return self.list(request, *args, **kwargs)
+
+    def post(self, request, *arg, **kwargs):
+        try:
+            user_id = CustomUser.objects.get(email=request.data.get("email"))
+        except:
+            return Response({
+                "success": False,
+                "message": "Email Not Found!"
+            }, status.HTTP_400_BAD_REQUEST)
+        try:
+            check_permission = Group_user.objects.get(Q(email=request.user) & Q(group_id=self.kwargs.get("group_id")))
+        except:
+            return Response({
+                "success": False,
+                "message": "You do not exist in this group!"
+            }, status.HTTP_400_BAD_REQUEST)
+        if not check_permission.isADGroup:
+            return Response({
+                "success": False,
+                "message": "Permission denied!"
+            }, status.HTTP_403_FORBIDDEN)
+        if Group_user.objects.filter(
+                Q(email=request.data.get("email")) & Q(group_id=self.kwargs.get("group_id"))).count():
+            return Response({
+                "success": False,
+                "message": "Email exist in Group!"
+            })
+        if check_permission.isADGroup:
+            infor_user = {
+                "user_id": user_id,
+                "group_id": Group.objects.get(pk=self.kwargs.get("group_id")),
+                "email": request.data.get("email"),
+            }
+            GroupManagerSerializer().create(validated_data=infor_user)
+            return Response({
+                "success": True,
+                "message": "Invite user success!"
+            }, status.HTTP_200_OK)
+        return Response({
+            "success": False,
+            "message": "Permission denied!"
+        }, status.HTTP_403_FORBIDDEN)
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            CustomUser.objects.get(email=request.data.get("email"))
+        except:
+            return Response({
+                "success": False,
+                "message": "Email Not Found!"
+            }, status.HTTP_400_BAD_REQUEST)
+        try:
+            check_permission = Group_user.objects.get(Q(email=request.user) & Q(group_id=self.kwargs.get("group_id")))
+        except:
+            return Response({
+                "success": False,
+                "message": "You do not exist in this group!"
+            }, status.HTTP_400_BAD_REQUEST)
+        if not check_permission.isADGroup:
+            return Response({
+                "success": False,
+                "message": "Permission denied!"
+            }, status.HTTP_403_FORBIDDEN)
+        try:
+            user_need_kick = Group_user.objects.get(
+                Q(email=request.data.get("email")) & Q(group_id=self.kwargs.get("group_id")))
+        except:
+            return Response({
+                "success": False,
+                "message": "User has not joined the group!"
+            }, status.HTTP_400_BAD_REQUEST)
+        if check_permission.isADGroup and not user_need_kick.isADGroup:
+            user_need_kick.delete()
+            return Response({
+                "success": True,
+                "message": "Kick the user successful!"
+            }, status.HTTP_200_OK)
+        if request.user.is_superuser and request.user.email != request.data.get("email"):
+            user_need_kick.delete()
+            return Response({
+                "success": True,
+                "message": "Kick the user successful!"
+            }, status.HTTP_200_OK)
+        return Response({
+            "success": False,
+            "message": "Permission denied!"
+        }, status.HTTP_403_FORBIDDEN)
+
+
+class GroupManageActionView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = GroupManagerSerializer
+    queryset = Group_user.objects.all()
+
+    def post(self, request, *args, **kwargs):
+        check_group = self.queryset.filter(group_id=self.kwargs.get("group_id"))
+        if not check_group:
+            return Response({
+                "success": False,
+                "message": "Group not found!"
+            }, status.HTTP_404_NOT_FOUND)
+        try:
+            isADGroup = GroupManagerSerializer(check_group.get(user_id=request.user)).data.get("isADGroup")
+        except:
+            return Response({
+                "success": False,
+                "message": "The user has not joined any groups!!"
+            }, status.HTTP_400_BAD_REQUEST)
+        if isADGroup:
+            return Response({
+                "success": False,
+                "message": "You need to give someone else admin rights!!!"
+            }, status.HTTP_400_BAD_REQUEST)
+        check_group.get(user_id=request.user).delete()
+        return Response({
+            "success": True,
+            "message": "Leave group successful!"
+        })
+
+
+class GroupManagerPermission(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = GroupManagerSerializer
+    queryset = Group_user.objects.all()
+
+    def post(self, request, *args, **kwargs):
+        try:
+            check_user = CustomUser.objects.get(email=request.data.get("email"))
+        except:
+            return Response({
+                "success": False,
+                "message": "Email Not Found!"
+            }, status.HTTP_400_BAD_REQUEST)
+        try:
+            isADGroup = Group_user.objects.get(Q(email=request.user) & Q(group_id=self.kwargs.get("group_id")))
+        except:
+            return Response({
+                "success": False,
+                "message": "Group Not Found!!"
+            }, status.HTTP_404_NOT_FOUND)
+        if not isADGroup.isADGroup:
+            return Response({
+                "success": False,
+                "message": "Permission denied!!"
+            }, status.HTTP_403_FORBIDDEN)
+        try:
+            check_inf = Group_user.objects.get(
+                Q(email=request.data.get("email")) & Q(group_id=self.kwargs.get("group_id")))
+        except:
+            return Response({
+                "success": False,
+                "message": "The user has not joined any groups!!"
+            }, status.HTTP_400_BAD_REQUEST)
+        count_ad = Group_user.objects.filter(Q(group_id=self.kwargs.get("group_id")) & Q(isADGroup=True)).count()
+        if count_ad > 5:
+            return Response({
+                "success": False,
+                "message": "Group can't have more than 5 admins!!"
+            })
+        if isADGroup.isADGroup or request.user.is_superuser:
+            if check_inf.isADGroup:
+                return Response({
+                    "success": False,
+                    "message": "User is already admin!!"
+                })
+            check_inf.inherit()
+            return Response({
+                "success": True,
+                "message": "Successfully!!"
+            }, status.HTTP_200_OK)
+        return Response({
+            "success": False,
+            "message": "Permission denied!!"
+        }, status.HTTP_403_FORBIDDEN)
+
+
+class GroupManagerDemote(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = GroupManagerSerializer
+    queryset = Group_user.objects.all()
+
+    def post(self, request, *args, **kwargs):
+        count_ad = Group_user.objects.filter(Q(group_id=self.kwargs.get("group_id")) & Q(isADGroup=True))
+        is_ad = Group_user.objects.get(Q(email=request.user) & Q(group_id=self.kwargs.get("group_id")))
+        if not is_ad.isADGroup:
+            return Response({
+                "success": False,
+                "message": "Permission denied!!"
+            }, status.HTTP_403_FORBIDDEN)
+        if count_ad.count() < 2:
+            return Response({
+                "success": False,
+                "message": "Group need at least 1 admin!!"
+            }, status.HTTP_400_BAD_REQUEST)
+        try:
+            demote = count_ad.get(user_id=request.user)
+        except:
+            return Response({
+                "success": False,
+                "message": "The user has not joined any groups!!"
+            }, status.HTTP_400_BAD_REQUEST)
+        demote.demote()
+        return Response({
+            "success": True,
+            "message": "Successfully!!"
+        }, status.HTTP_200_OK)
