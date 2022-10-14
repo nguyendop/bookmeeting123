@@ -19,6 +19,7 @@ from events.serializers import EventSerializer
 from booking.models import Booking
 from booking.serializers import BookingSerializer, BookingemptySerializer, BookingsearchroomSerializer
 from .serializers import AddRoomSerializer, GroupManagerSerializer
+from .permissions import IsADGroupPermission
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from users.models import Group_user, CustomUser
 
@@ -550,7 +551,7 @@ class EditRoom(generics.GenericAPIView):
 
 
 class GroupManagerViewset(generics.GenericAPIView, mixins.ListModelMixin):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
     serializer_class = GroupManagerSerializer
     queryset = Group_user.objects.all()
 
@@ -559,18 +560,6 @@ class GroupManagerViewset(generics.GenericAPIView, mixins.ListModelMixin):
         return self.queryset.filter(group_id=group_id)
 
     def get(self, request, *args, **kwargs):
-        try:
-            is_ad = Group_user.objects.get(Q(email=request.user) & Q(group_id=self.kwargs.get("group_id")))
-        except:
-            return Response({
-                "success": False,
-                "message": "You do not exist in this group!"
-            }, status.HTTP_400_BAD_REQUEST)
-        if not is_ad.isADGroup:
-            return Response({
-                "success": False,
-                "message": "Permission denied!"
-            }, status.HTTP_403_FORBIDDEN)
         return self.list(request, *args, **kwargs)
 
     def post(self, request, *arg, **kwargs):
@@ -588,17 +577,23 @@ class GroupManagerViewset(generics.GenericAPIView, mixins.ListModelMixin):
                 "success": False,
                 "message": "You do not exist in this group!"
             }, status.HTTP_400_BAD_REQUEST)
-        if not check_permission.isADGroup:
-            return Response({
-                "success": False,
-                "message": "Permission denied!"
-            }, status.HTTP_403_FORBIDDEN)
         if Group_user.objects.filter(
                 Q(email=request.data.get("email")) & Q(group_id=self.kwargs.get("group_id"))).count():
             return Response({
                 "success": False,
                 "message": "Email exist in Group!"
             })
+        if request.user.is_superuser and request.user.email != request.data.get("email"):
+            infor_user = {
+                "user_id": user_id,
+                "group_id": Group.objects.get(pk=self.kwargs.get("group_id")),
+                "email": request.data.get("email"),
+            }
+            GroupManagerSerializer().create(validated_data=infor_user)
+            return Response({
+                "success": True,
+                "message": "Invite user success!"
+            }, status.HTTP_200_OK)
         if check_permission.isADGroup:
             infor_user = {
                 "user_id": user_id,
@@ -630,11 +625,6 @@ class GroupManagerViewset(generics.GenericAPIView, mixins.ListModelMixin):
                 "success": False,
                 "message": "You do not exist in this group!"
             }, status.HTTP_400_BAD_REQUEST)
-        if not check_permission.isADGroup:
-            return Response({
-                "success": False,
-                "message": "Permission denied!"
-            }, status.HTTP_403_FORBIDDEN)
         try:
             user_need_kick = Group_user.objects.get(
                 Q(email=request.data.get("email")) & Q(group_id=self.kwargs.get("group_id")))
@@ -643,13 +633,18 @@ class GroupManagerViewset(generics.GenericAPIView, mixins.ListModelMixin):
                 "success": False,
                 "message": "User has not joined the group!"
             }, status.HTTP_400_BAD_REQUEST)
-        if check_permission.isADGroup and not user_need_kick.isADGroup:
+        if request.user.is_superuser and request.user.email != request.data.get("email"):
             user_need_kick.delete()
             return Response({
                 "success": True,
                 "message": "Kick the user successful!"
             }, status.HTTP_200_OK)
-        if request.user.is_superuser and request.user.email != request.data.get("email"):
+        if not check_permission.isADGroup:
+            return Response({
+                "success": False,
+                "message": "Permission denied!"
+            }, status.HTTP_403_FORBIDDEN)
+        if check_permission.isADGroup and not user_need_kick.isADGroup:
             user_need_kick.delete()
             return Response({
                 "success": True,
