@@ -2,8 +2,9 @@ import os
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.core.mail import send_mail
+from django.http import Http404
 from rest_framework import status, filters
-from rest_framework.viewsets import generics
+from rest_framework.viewsets import generics, mixins
 from rest_framework.decorators import APIView
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
@@ -15,7 +16,7 @@ from .models import CustomUser, status_user
 from .permissions import IsOwnerOrReadOnly
 from .serializers import CustomUserSerializer, UserListAll, UserLoginSerializer, ChangePasswordSerializer, \
     RegisterSerializer, \
-    UserViewSerializer
+    UserViewSerializer, UserSerializer
 
 
 class UserList(generics.ListAPIView):
@@ -290,80 +291,54 @@ class ChangePasswordView(generics.GenericAPIView):
         })
 
 
-class UserDetail(generics.GenericAPIView):
+class UserDetail(generics.GenericAPIView, mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
     """
     Retrieve, update or delete a user instance.
     """
     permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
-    serializer_class = CustomUserSerializer
-
-    def get(self, request, pk, format=None):
-
-        try:
-            user = CustomUser.objects.get(pk=pk)
-            serializer = CustomUserSerializer(user)
-            return Response(serializer.data)
-
-        except CustomUser.DoesNotExist:
-            return Response({'code': status.HTTP_404_NOT_FOUND})
-
-    def put(self, request, pk, format=None):
-        try:
-            user = CustomUser.objects.get(pk=pk)
-            serializer = CustomUserSerializer(user, data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except CustomUser.DoesNotExist:
-            return Response({'code': status.HTTP_404_NOT_FOUND})
-
-    def delete(self, request, pk, format=None):
-        try:
-            user = CustomUser.objects.get(pk=pk)
-            user.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except CustomUser.DoesNotExist:
-            return Response({'code': status.HTTP_404_NOT_FOUND})
-
-
-class UserNameView(generics.GenericAPIView):
-    permission_classes = [IsAuthenticated]
-    serializer_class = UserViewSerializer
+    serializer_class = UserSerializer
     queryset = CustomUser.objects.all()
 
-    def get(self, request, format=None):
-
-        jwt_object = JWTAuthentication()
-        header = jwt_object.get_header(request)
-        raw_token = jwt_object.get_raw_token(header)
-        validated_token = jwt_object.get_validated_token(raw_token)
-        user = jwt_object.get_user(validated_token)
+    def get_object(self):
+        pk = self.kwargs.get("pk")
         try:
-            user_data = CustomUser.objects.get(email=user)
-        except:
+            return CustomUser.objects.get(pk=pk)
+        except CustomUser.DoesNotExist:
+            raise Http404
+
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def delete(self, request, pk, *args, **kwargs):
+        try:
+            CustomUser.objects.exclude(status_user=-1).get(pk=pk).delete()
             return Response({
-                "success": False,
-                "error": {
-                    "code": status.HTTP_400_BAD_REQUEST,
-                    "message": "Bad request!"
-                }
-            }, status=status.HTTP_400_BAD_REQUEST)
-        return Response({
-            "success": True,
-            "data": UserViewSerializer(user_data).data,
-        }, status=status.HTTP_200_OK)
+                "success": True,
+                "message": "Delete user successful!!"
+            }, status.HTTP_200_OK)
+        except CustomUser.DoesNotExist:
+            raise Http404
 
 
-class ListUser(generics.GenericAPIView):
-    permissions_classes = [IsAuthenticated]
-    serializer_class = UserListAll
+class UserNameView(generics.GenericAPIView, mixins.RetrieveModelMixin):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
     queryset = CustomUser.objects.all()
 
-    def get(self, request, format=None):
-        User = CustomUser.objects.all()
-        serializer = UserListAll(User, many=True)
-        return Response({
-            "success": True,
-            "data": serializer.data
-        })
+    def get_object(self):
+        return self.request.user
+
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, *kwargs)
+
+
+class ListUser(generics.GenericAPIView, mixins.ListModelMixin):
+    permissions_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
+    queryset = CustomUser.objects.all()
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

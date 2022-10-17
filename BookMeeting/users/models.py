@@ -53,6 +53,10 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return f'{self.email}'
 
+    def delete(self):
+        self.status_user = -1
+        self.save()
+
 
 class Group_user(models.Model):
     id = models.AutoField(primary_key=True, editable=False)

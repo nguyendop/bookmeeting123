@@ -73,6 +73,20 @@ class UserListAll(serializers.Serializer):
     is_superuser = serializers.BooleanField()
     group = serializers.CharField()
     created_at = serializers.DateTimeField()
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = [
+            "id",
+            "is_superuser",
+            "email",
+            "fullname",
+            "phone",
+            "status_user",
+            "role",
+            "group",
+            "user_permissions"
+        ]
     
 class Membergroup(serializers.ModelSerializer):
     class Meta:
