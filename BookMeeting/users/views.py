@@ -367,3 +367,5 @@ class ListUser(generics.GenericAPIView):
             "success": True,
             "data": serializer.data
         })
+
+
