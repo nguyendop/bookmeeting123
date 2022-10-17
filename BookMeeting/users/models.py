@@ -1,7 +1,10 @@
+import email
+from tkinter.tix import Tree
 import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin
+from django.forms import CharField
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
@@ -52,11 +55,19 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f'{self.email}'
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> f709e2b2b5dd5cd6f9df8bc1bb32cf8efc2026ce
 class Group_user(models.Model):
     id = models.CharField(max_length=50, primary_key=True, editable=False)
     user_id = models.ForeignKey("CustomUser", on_delete=models.CASCADE, related_name="user_id", null=True, blank=True)
     group_id = models.ForeignKey("room_and_group.Group", on_delete=models.SET_NULL, blank=True, null=True)
+<<<<<<< HEAD
     email = models.ForeignKey("CustomUser", on_delete=models.CASCADE, related_name="email_user", blank=True, null=True)
     isADGroup = models.BooleanField(default=False)
+=======
+    email = models.ForeignKey("CustomUser", on_delete=models.CASCADE, related_name="email", blank=True, null=True)
+    isADGroup = models.BooleanField(default=False)
+>>>>>>> f709e2b2b5dd5cd6f9df8bc1bb32cf8efc2026ce
