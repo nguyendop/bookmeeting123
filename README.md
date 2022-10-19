@@ -13,7 +13,7 @@ Thực hiện việc clone project như bình thường, clone nhánh `develop` 
 Bạn gõ câu lệnh sau để tiến hành cài đặt hết những package cần có
 
 ```
-pip install -r requirement
+pip install -r requirements.txt
 ```
 
 Khi đó tất cả các package sẽ được install đầy đủ. Các bạn nên chạy nó trong **vitual env** nhé
