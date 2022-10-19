@@ -15,6 +15,7 @@ class Booking(models.Model):
     time_from = models.DateTimeField()
     time_to = models.DateTimeField()
     room = models.ForeignKey('room_and_group.Room', on_delete=models.SET_NULL, null=True, blank=True)
+    participant = models.EmailField(blank=True, null=True, unique=False)
     status = models.CharField(max_length=20, choices=status, default="0")
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)

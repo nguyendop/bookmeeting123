@@ -10,4 +10,6 @@ urlpatterns = [
     path('empty_room/', SearchEmptyRoom.as_view(), name="SearchEmptyRoom"),
     path('delete_many_booking/', DeleteManyBooking.as_view(), name="Delete-many-booking"),
     path('delete_booking/', DeleteBooking.as_view(), name="delete-booking"),
+    path('<uuid:pk>', BookingViewSerializer.as_view(), name="user in booking"),
+    path('invite_user/<uuid:pk>', BookingInviteViewSet.as_view(), name="invite user to booking"),
 ]

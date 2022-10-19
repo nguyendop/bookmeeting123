@@ -295,7 +295,7 @@ class UserDetail(generics.GenericAPIView, mixins.RetrieveModelMixin, mixins.Upda
     """
     Retrieve, update or delete a user instance.
     """
-    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+    permission_classes = [IsAdminUser, IsOwnerOrReadOnly]
     serializer_class = UserSerializer
     queryset = CustomUser.objects.all()
 
@@ -336,7 +336,7 @@ class UserNameView(generics.GenericAPIView, mixins.RetrieveModelMixin):
 
 
 class ListUser(generics.GenericAPIView, mixins.ListModelMixin):
-    permissions_classes = [IsAuthenticated]
+    permissions_classes = [IsAdminUser]
     serializer_class = UserSerializer
     queryset = CustomUser.objects.all()
 
