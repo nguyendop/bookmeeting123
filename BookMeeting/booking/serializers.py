@@ -77,10 +77,10 @@ class BookingInviteUserSerializer(serializers.ModelSerializer):
         return instance
 
     def get_event(self, obj):
-        return EventSerializer(Event.objects.filter(id=obj.event.id), many=True).data[0].get("title")
+        return obj.event.title
 
     def get_room(self, obj):
-        return RoomSerializer(Room.objects.filter(id=obj.room.id), many=True).data[0].get("name")
+        return obj.room.name
 
     # def get_participant(self, obj):
     #     print(obj)
@@ -91,4 +91,6 @@ class BookingViewSerializer(BookingInviteUserSerializer):
     participant = serializers.SerializerMethodField()
 
     def get_participant(self, obj):
+        if obj.participant is "" or obj.participant is None:
+            obj.participant = "[]"
         return eval(obj.participant)
