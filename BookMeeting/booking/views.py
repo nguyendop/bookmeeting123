@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from django.utils.dateparse import parse_datetime
 from django.http import Http404
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import APIView
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
@@ -264,11 +265,12 @@ class BookingViewSerializer(generics.GenericAPIView, mixins.RetrieveModelMixin):
     queryset = Booking.objects.all()
 
     def get_object(self):
-        pk = self.kwargs.get("pk")
-        try:
-            return self.queryset.get(pk=pk)
-        except Booking.DoesNotExist:
-            raise Http404
+        return get_object_or_404(self.queryset, pk=self.kwargs.get("pk"))
+        # pk = self.kwargs.get("pk")
+        # try:
+        #     return self.queryset.get(pk=pk)
+        # except Booking.DoesNotExist:
+        #     raise Http404
 
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)

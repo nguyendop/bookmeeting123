@@ -62,15 +62,15 @@ class BookingInviteUserSerializer(serializers.ModelSerializer):
             "status"
         ]
 
-    def update(self, instance, **validated_data):
+    def update(self, instance, validated_data):
         participant = list()
-        if not validated_data["validated_data"].get("group") is None:
-            member_group = Group_user.objects.filter(group_id=validated_data["validated_data"]["group"])
+        if not validated_data.get("group") is None:
+            member_group = Group_user.objects.filter(group_id=validated_data["group"])
             for _email in member_group:
                 participant.append(_email.email)
         else:
             pass
-        participant.extend(validated_data["validated_data"]["participant"])
+        participant.extend(validated_data["participant"])
         data = list(set(participant))
         instance.participant = data
         instance.save()
