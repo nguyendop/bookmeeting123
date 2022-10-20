@@ -285,6 +285,8 @@ class BookingInviteViewSet(generics.GenericAPIView):
             instance = Booking.objects.get(pk=self.kwargs.get("pk"))
         except Booking.DoesNotExist:
             raise Http404
+        if instance.participant is None:
+            instance.participant = "[]"
         input_data.extend(eval(instance.participant))
         for item in request.data.get("participant", []):
             if item in input_data:
