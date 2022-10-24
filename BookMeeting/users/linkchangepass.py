@@ -48,7 +48,7 @@ class mail_newpassword(APIView):
 
         # kiểm tra key đã sử dụng rồi hay chưa
         fhandle = open(
-            os.path.join(sys.path[0], r'C:\inetpub\wwwroot\03.source-backend\BookMeeting\users\used_token.txt'))
+            os.path.join(sys.path[0], 'users/used_token.txt'))
         for line in fhandle:
             if line == key:
                 return Response({
@@ -67,7 +67,7 @@ class mail_newpassword(APIView):
             user.save()
 
             fhandle = open(
-                os.path.join(sys.path[0], r'C:\inetpub\wwwroot\03.source-backend\BookMeeting\users\used_token.txt'),
+                os.path.join(sys.path[0], 'users/used_token.txt'),
                 'a')
             fhandle.write(key)
             fhandle.close()
