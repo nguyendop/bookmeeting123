@@ -342,3 +342,7 @@ class ListUser(generics.GenericAPIView, mixins.ListModelMixin):
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+
+
