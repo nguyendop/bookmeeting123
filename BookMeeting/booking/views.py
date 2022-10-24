@@ -294,12 +294,12 @@ class BookingInviteViewSet(generics.GenericAPIView):
             if item in input_data:
                 return Response({
                     "success": False,
-                    "message": f"{item} in exist!!"
+                    "detail": f"{item} in exist!!"
                 }, status.HTTP_400_BAD_REQUEST)
         input_data.extend(request.data.get("participant", []))
         request.data.update({"participant": input_data})
         BookingInviteUserSerializer().update(instance=instance, validated_data=request.data)
         return Response({
             "success": True,
-            "message": "Invite successfully!!"
+            "detail": "Invite successfully!!"
         }, status.HTTP_200_OK)

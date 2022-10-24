@@ -317,7 +317,7 @@ class UserDetail(generics.GenericAPIView, mixins.RetrieveModelMixin, mixins.Upda
             CustomUser.objects.exclude(status_user=-1).get(pk=pk).delete()
             return Response({
                 "success": True,
-                "message": "Delete user successful!!"
+                "detail": "Delete user successful!!"
             }, status.HTTP_200_OK)
         except CustomUser.DoesNotExist:
             raise Http404
