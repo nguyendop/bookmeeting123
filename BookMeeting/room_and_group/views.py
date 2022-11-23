@@ -598,9 +598,7 @@ class GroupManagerViewset(generics.GenericAPIView, mixins.ListModelMixin):
                     "group_id": Group.objects.get(pk=self.kwargs.get("group_id")),
                     "email": _email,
                 }
-                if request.user.is_superuser and request.user.email != _email:
-                    GroupManagerSerializer().create(validated_data=infor_user)
-                if check_permission.isADGroup:
+                if (request.user.is_superuser and request.user.email != _email) or check_permission.isADGroup:
                     GroupManagerSerializer().create(validated_data=infor_user)
 
             return Response({
