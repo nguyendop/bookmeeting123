@@ -307,7 +307,6 @@ class UserDetail(generics.GenericAPIView, mixins.RetrieveModelMixin, mixins.Upda
             user = CustomUser.objects.get(pk=pk)
             group_id = user.group_id
             groups = Group.objects.get(id=group_id)
-            print(groups)
             obj = {}
             obj["name"] = groups.name
             obj["id"] = groups.id
