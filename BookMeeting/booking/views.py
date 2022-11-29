@@ -1,19 +1,23 @@
 from datetime import datetime, timedelta
 from django.utils.dateparse import parse_datetime
+from django.http import Http404
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import APIView
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.viewsets import generics, mixins
 from users.serializers import CustomUserSerializer
 from django.db.models import Q
 from users.models import CustomUser
 from .models import Booking
 from room_and_group.models import Room
-from .serializers import BookingSerializer, BookingemptySerializer
+from .serializers import BookingSerializer, BookingemptySerializer, BookingInviteUserSerializer, BookingViewSerializer
 from room_and_group.serializers import RoomSerializer, Roomempty
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from events.models import Event
 from events.serializers import EventSerializer
+from .permissions import IsADBookingPermission
 
 
 class BookingListInTime(APIView):
@@ -156,17 +160,14 @@ class DeleteManyBooking(APIView):
                 "message": "Input is invalid!"
             }, status=status.HTTP_400_BAD_REQUEST)
 
-
-
-
         boolean_weekly = {
-        "2": True if weekly.find('2') != -1 else False,
-        "3": True if weekly.find('3') != -1 else False,
-        "4": True if weekly.find('4') != -1 else False,
-        "5": True if weekly.find('5') != -1 else False,
-        "6": True if weekly.find('6') != -1 else False,
-        "7": True if weekly.find('7') != -1 else False,
-        "8": True if weekly.find('8') != -1 else False,
+            "2": True if weekly.find('2') != -1 else False,
+            "3": True if weekly.find('3') != -1 else False,
+            "4": True if weekly.find('4') != -1 else False,
+            "5": True if weekly.find('5') != -1 else False,
+            "6": True if weekly.find('6') != -1 else False,
+            "7": True if weekly.find('7') != -1 else False,
+            "8": True if weekly.find('8') != -1 else False,
         }
         list_booking = list()
         from_date = from_date.date()
@@ -184,19 +185,20 @@ class DeleteManyBooking(APIView):
         validated_token = jwt_object.get_validated_token(raw_token)
         user = jwt_object.get_user(validated_token).id
         is_admin = (CustomUserSerializer(CustomUser.objects.get(id=user))).data['is_superuser']
-        data_event=[]
+        data_event = []
         try:
             for i in list_booking:
                 if is_admin:
                     time_from = Booking.objects.filter(time_from__date=i).filter(status=0).filter(event_id=event_id)
                     serializer = BookingSerializer(time_from, many=True)
-                    if serializer.data!=[]:
+                    if serializer.data != []:
                         data_event.append(serializer.data)
                     time_from.update(status=-1)
                 else:
-                    time_from = Booking.objects.filter(time_from__date=i).filter(status=0).filter(event_id=event_id).filter(created_by=user)
+                    time_from = Booking.objects.filter(time_from__date=i).filter(status=0).filter(
+                        event_id=event_id).filter(created_by=user)
                     serializer = BookingSerializer(time_from, many=True)
-                    if serializer.data!=[]:
+                    if serializer.data != []:
                         data_event.append(serializer.data)
                     time_from.update(status=-1)
         except:
@@ -204,15 +206,16 @@ class DeleteManyBooking(APIView):
                 "success": False,
                 "message": "UUID Incorrect"
             }, status=status.HTTP_400_BAD_REQUEST)
-        if data_event==[]:
+        if data_event == []:
             return Response({
                 "success": False,
                 "message": "Booking not found!"
-            }, status=status.HTTP_404_NOT_FOUND)    
+            }, status=status.HTTP_404_NOT_FOUND)
         return Response({
-                "success": True,
-                "message": "Delete successful!"
-            }, status=status.HTTP_200_OK)
+            "success": True,
+            "message": "Delete successful!"
+        }, status=status.HTTP_200_OK)
+
 
 # delete 1 booking
 class DeleteBooking(APIView):
@@ -254,3 +257,49 @@ class DeleteBooking(APIView):
                 "success": True,
                 "message": "Delete successful!"
             }, status=status.HTTP_200_OK)
+
+
+class BookingViewSerializer(generics.GenericAPIView, mixins.RetrieveModelMixin):
+    permission_classes = (IsAuthenticated,)
+    serializer_class = BookingViewSerializer
+    queryset = Booking.objects.all()
+
+    def get_object(self):
+        return get_object_or_404(self.queryset, pk=self.kwargs.get("pk"))
+        # pk = self.kwargs.get("pk")
+        # try:
+        #     return self.queryset.get(pk=pk)
+        # except Booking.DoesNotExist:
+        #     raise Http404
+
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+
+class BookingInviteViewSet(generics.GenericAPIView):
+    permission_classes = (IsADBookingPermission,)
+    serializer_class = BookingInviteUserSerializer
+    queryset = Booking.objects.all()
+
+    def post(self, request, *args, **kwargs):
+        input_data = list()
+        try:
+            instance = Booking.objects.get(pk=self.kwargs.get("pk"))
+        except Booking.DoesNotExist:
+            raise Http404
+        if instance.participant is None:
+            instance.participant = "[]"
+        input_data.extend(eval(instance.participant))
+        for item in request.data.get("participant", []):
+            if item in input_data:
+                return Response({
+                    "success": False,
+                    "detail": f"{item} in exist!!"
+                }, status.HTTP_400_BAD_REQUEST)
+        input_data.extend(request.data.get("participant", []))
+        request.data.update({"participant": input_data})
+        BookingInviteUserSerializer().update(instance=instance, validated_data=request.data)
+        return Response({
+            "success": True,
+            "detail": "Invite successfully!!"
+        }, status.HTTP_200_OK)

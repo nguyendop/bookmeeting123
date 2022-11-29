@@ -297,7 +297,7 @@ class UserDetail(generics.GenericAPIView, mixins.RetrieveModelMixin, mixins.Upda
     """
     Retrieve, update or delete a user instance.
     """
-    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+    permission_classes = [IsAdminUser, IsOwnerOrReadOnly]
     serializer_class = UserSerializer
     queryset = CustomUser.objects.all()
 
@@ -332,7 +332,7 @@ class UserDetail(generics.GenericAPIView, mixins.RetrieveModelMixin, mixins.Upda
             CustomUser.objects.exclude(status_user=-1).get(pk=pk).delete()
             return Response({
                 "success": True,
-                "message": "Delete user successful!!"
+                "detail": "Delete user successful!!"
             }, status.HTTP_200_OK)
         except CustomUser.DoesNotExist:
             raise Http404
@@ -351,7 +351,7 @@ class UserNameView(generics.GenericAPIView, mixins.RetrieveModelMixin):
 
 
 class ListUser(generics.GenericAPIView, mixins.ListModelMixin):
-    permissions_classes = [IsAuthenticated]
+    permissions_classes = [IsAdminUser]
     serializer_class = UserSerializer
     queryset = CustomUser.objects.all()
 
