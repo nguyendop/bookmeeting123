@@ -1,5 +1,6 @@
 import os
 from django.conf import settings
+from jsonmerge import merge
 from django.contrib.auth import authenticate
 from django.core.mail import send_mail
 from django.http import Http404
@@ -11,8 +12,9 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.template.loader import render_to_string
-
 from .models import CustomUser, status_user
+import pandas as pd
+from room_and_group.models import Group
 from .permissions import IsOwnerOrReadOnly
 from .serializers import CustomUserSerializer, UserListAll, UserLoginSerializer, ChangePasswordSerializer, \
     RegisterSerializer, \
@@ -302,7 +304,20 @@ class UserDetail(generics.GenericAPIView, mixins.RetrieveModelMixin, mixins.Upda
     def get_object(self):
         pk = self.kwargs.get("pk")
         try:
-            return CustomUser.objects.get(pk=pk)
+            user = CustomUser.objects.get(pk=pk)
+            group_id = user.group_id
+            groups = Group.objects.get(id=group_id)
+            print(groups)
+            obj = {}
+            obj["name"] = groups.name
+            obj["id"] = groups.id
+            obj["status_group"] = groups.status_group
+            obj["updated_at"] = groups.updated_at
+            obj["created_at"] = groups.created_at
+            obj["created_by_id"] = groups.created_by_id
+            obj["updated_by_id"] = groups.updated_by_id
+            user.group_id = obj
+            return user
         except CustomUser.DoesNotExist:
             raise Http404
 
