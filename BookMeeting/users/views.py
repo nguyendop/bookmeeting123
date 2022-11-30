@@ -1,19 +1,17 @@
 import os
 from django.conf import settings
-from jsonmerge import merge
 from django.contrib.auth import authenticate
 from django.core.mail import send_mail
 from django.http import Http404
 from rest_framework import status, filters
 from rest_framework.viewsets import generics, mixins
-from rest_framework.decorators import APIView
+
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.template.loader import render_to_string
-from .models import CustomUser, status_user
-import pandas as pd
+from .models import CustomUser
 from room_and_group.models import Group
 from .permissions import IsOwnerOrReadOnly
 from .serializers import CustomUserSerializer, UserListAll, UserLoginSerializer, ChangePasswordSerializer, \

@@ -35,7 +35,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     role = models.CharField(max_length=20, choices=role_user, default="1")
     group = models.ForeignKey("room_and_group.Group", on_delete=models.CASCADE, related_name="group_by", null=True,
                               blank=True)
-    avatar= models.CharField(max_length=254, unique=False,default='', blank=False)
+    avatar= models.CharField(max_length=200, default="", blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey("CustomUser", on_delete=models.CASCADE, related_name="created_by_admin", null=True,
