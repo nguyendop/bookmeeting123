@@ -85,6 +85,7 @@ class UserSerializer(serializers.ModelSerializer):
             "status_user",
             "role",
             "group",
+            "avatar",
             "user_permissions"
         ]
     

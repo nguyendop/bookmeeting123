@@ -304,16 +304,19 @@ class UserDetail(generics.GenericAPIView, mixins.RetrieveModelMixin, mixins.Upda
         try:
             user = CustomUser.objects.get(pk=pk)
             group_id = user.group_id
-            groups = Group.objects.get(id=group_id)
-            obj = {}
-            obj["name"] = groups.name
-            obj["id"] = groups.id
-            obj["status_group"] = groups.status_group
-            obj["updated_at"] = groups.updated_at
-            obj["created_at"] = groups.created_at
-            obj["created_by_id"] = groups.created_by_id
-            obj["updated_by_id"] = groups.updated_by_id
-            user.group_id = obj
+
+            if (group_id != None):
+                groups = Group.objects.get(id=group_id)
+
+                obj = {}
+                obj["name"] = groups.name
+                obj["id"] = groups.id
+                obj["status_group"] = groups.status_group
+                obj["updated_at"] = groups.updated_at
+                obj["created_at"] = groups.created_at
+                obj["created_by_id"] = groups.created_by_id
+                obj["updated_by_id"] = groups.updated_by_id
+                user.group_id = obj
             return user
         except CustomUser.DoesNotExist:
             raise Http404
