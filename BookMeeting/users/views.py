@@ -338,7 +338,7 @@ class UserDetail(generics.GenericAPIView, mixins.RetrieveModelMixin, mixins.Upda
             raise Http404
 
 
-class UserNameView(generics.GenericAPIView, mixins.RetrieveModelMixin):
+class UserNameView(generics.GenericAPIView, mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
     queryset = CustomUser.objects.all()
@@ -348,7 +348,9 @@ class UserNameView(generics.GenericAPIView, mixins.RetrieveModelMixin):
 
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, *kwargs)
-
+    
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
 
 class ListUser(generics.GenericAPIView, mixins.ListModelMixin):
     permissions_classes = [IsAdminUser]
