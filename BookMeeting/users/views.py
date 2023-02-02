@@ -66,7 +66,7 @@ class UserRegisterView(generics.GenericAPIView):
                     password = '123456'
                     html_template = 'reset_mail.html'
                     html_content = render_to_string(html_template, {'email': email, 'password': password})
-                    send_mail(subject='User Password Bookmeeting', message='msg', from_email=settings.EMAIL_HOST_USER,
+                    send_mail(subject='User Password Bookmeeting', message='msg', from_email=settings.DEFAULT_FROM_EMAIL,
                               recipient_list=[email], fail_silently=False, html_message=html_content)
                     return Response({
                         "success": True,
