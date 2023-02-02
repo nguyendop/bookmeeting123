@@ -219,11 +219,10 @@ SIMPLE_JWT = {
 
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # Email settings
-DEFAULT_FROM_EMAIL = 'lvt.testter1@gmail.com'
-
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST = "smtp.sendgrid.net"
+EMAIL_HOST_USER = "apikey"  # this is exactly the value 'apikey'
+EMAIL_HOST_PASSWORD = "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"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'lvt.testter1@gmail.com'
-EMAIL_HOST_PASSWORD = 'bnxgiethpajokjtb'
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+DEFAULT_FROM_EMAIL = "oketauthichmi@gmail.com"
