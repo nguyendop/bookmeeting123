@@ -59,6 +59,38 @@ class UserRegisterView(generics.GenericAPIView):
                     created_by = CustomUser.objects.filter(email=serializer.data['email']).update(created_by=user_id)
                     updated_by = CustomUser.objects.filter(email=serializer.data['email']).update(updated_by=user_id)
                     serializer_save_user = CustomUserSerializer(user_data, data=[status_user, created_by, updated_by])
+class UserRegisterView(generics.GenericAPIView):
+    """
+    This is Register view
+    """
+    permission_classes = [IsAdminUser]
+    serializer_class = RegisterSerializer
+
+    def post(self, request, format=None):
+        jwt_object = JWTAuthentication()
+        header = jwt_object.get_header(request)
+        raw_token = jwt_object.get_raw_token(header)
+        validated_token = jwt_object.get_validated_token(raw_token)
+        user_id = jwt_object.get_user(validated_token).id
+
+        serializer = RegisterSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({
+                "success": False,
+                "error": {
+                    "code": status.HTTP_400_BAD_REQUEST,
+                    "message": serializer.errors,
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
+        elif serializer.is_valid():
+            try:
+                user_data = CustomUser.objects.get(email=serializer.data['email'])
+                serializer_user = CustomUserSerializer(user_data)
+                if serializer_user.data['status_user'] == '-1':
+                    status_user = CustomUser.objects.filter(email=serializer.data['email']).update(status_user=1)
+                    created_by = CustomUser.objects.filter(email=serializer.data['email']).update(created_by=user_id)
+                    updated_by = CustomUser.objects.filter(email=serializer.data['email']).update(updated_by=user_id)
+                    serializer_save_user = CustomUserSerializer(user_data, data=[status_user, created_by, updated_by])
                     if serializer_save_user.is_valid():
                         serializer_save_user.save()
 
@@ -66,7 +98,7 @@ class UserRegisterView(generics.GenericAPIView):
                     password = '123456'
                     html_template = 'reset_mail.html'
                     html_content = render_to_string(html_template, {'email': email, 'password': password})
-                    send_mail(subject='User Password Bookmeeting', message='msg', from_email=settings.DEFAULT_FROM_EMAIL,
+                    send_mail(subject='User Password Bookmeeting', message='msg', from_email=settings.EMAIL_HOST_USER,
                               recipient_list=[email], fail_silently=False, html_message=html_content)
                     return Response({
                         "success": True,
@@ -100,6 +132,7 @@ class UserRegisterView(generics.GenericAPIView):
                 return Response({
                     "success": True,
                 }, status=status.HTTP_201_CREATED)
+
 
 
 class UserLoginView(generics.GenericAPIView):
