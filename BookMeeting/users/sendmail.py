@@ -76,7 +76,7 @@ def sendmail(request):
             html_content = render_to_string(html_template,
                                             {'data_encoded_1': data_encoded_1, 'data_encoded_2': data_encoded_2})
 
-            send_mail(subject='Authenticate forgot password', message='msg', from_email=settings.DEFAULT_FROM_EMAIL,
+            send_mail(subject='Authenticate forgot password', message='msg', from_email=settings.EMAIL_HOST_USER,
                       recipient_list=[email], fail_silently=False, html_message=html_content)  # send mail function
             return Response({
                 'status': True,
